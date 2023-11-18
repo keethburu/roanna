@@ -1,0 +1,6 @@
+@Roanna.Web_HostAddress = http://localhost:5129
+
+GET {{Roanna.Web_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
