@@ -95,3 +95,115 @@ Priority for data security and privacy to build trust with early users.
 In future versions, the integration of AI for predictive analytics and to automate more complex tasks like advanced metadata handling.
 Scalability Tests:
 Plan for scalability testing as part of future development to ensure the platform can handle increased loads and user numbers effectively.
+
+
+# Pricing Policy 
+Basic Policy: The foundational pricing rules applicable across all publishers and journals. It sets the base APCs and general discount or waiver rules.
+Publisher-specific Policy: Overrides or extends the Basic Policy with additional rules specific to each publisher. These can include publisher-specific discounts, special waivers, or different base APC rates.
+Journal-specific Policy: Further refines the pricing rules for individual journals under a publisher. It can override the Publisher-specific Policy with journal-specific rates or discounts.
+Article/Transaction-specific Policy: The most granular level, allowing for custom pricing for individual articles or transactions. This can take into account article-specific factors like length, research field, open access status, etc.
+# Data Model 
+## PricingPolicy
+PricingPolicyID: Unique identifier.
+ParentPolicyID: Reference to the parent policy ID, allowing for inheritance.
+PolicyType: Indicates the level (Basic, Publisher-specific, Journal-specific, Article-specific).
+BasePrice: Base APC (can be inherited or overridden).
+DiscountRules: Rules for discounts (can be inherited or overridden).
+SpecialConditions: Special conditions (can be inherited or overridden).
+## Publisher
+PublisherID: Unique identifier.
+PricingPolicyID: Reference to its specific pricing policy.
+## Journal
+JournalID: Unique identifier.
+PublisherID: Reference to the publisher.
+PricingPolicyID: Reference to its specific pricing policy.
+## Article
+ArticleID: Unique identifier.
+JournalID: Reference to the journal.
+PricingPolicyID: Reference to a specific policy, if any overrides are needed at the article level.
+Transaction
+TransactionID: Unique identifier.
+ArticleID: Linked to the corresponding article.
+Amount: Amount charged, determined based on the applicable pricing policy.
+
+# Process Flow
+## Policy Determination:
+Start at the most specific level (Article-specific) and check if a policy is defined.
+If not, move up to the Journal-specific level, then Publisher-specific, and finally to the Basic Policy.
+At each level, inherited rules are considered unless explicitly overridden.
+
+## APC Calculation:
+Based on the determined policy, calculate the APC using base prices, discount rules, and special conditions.
+
+## Transaction Creation
+A Transaction is created with the calculated APC for the article.
+This hierarchical model enables nuanced control over pricing policies at different levels, allowing each tier to customize or extend the rules of its parent. It's important to implement a robust logic mechanism to handle the inheritance and overriding of rules effectively. This approach can significantly enhance the platform's capability to cater to a diverse range of pricing scenarios.
+
+
+# Csharp POCO
+```csharp
+public class Article
+{
+    public int ArticleID { get; set; }
+    public string Title { get; set; }
+    public string Abstract { get; set; }
+    public int AuthorID { get; set; } // Assuming Author is another entity
+    public int JournalID { get; set; }
+    public DateTime PublicationDate { get; set; }
+    public DateTime SubmissionDate { get; set; }
+    public string Status { get; set; }
+    public string DOI { get; set; }
+    public string Keywords { get; set; }
+    public string PeerReviewStatus { get; set; }
+    // Navigation property
+    public Journal Journal { get; set; }
+}
+
+public class Publisher
+{
+    public int PublisherID { get; set; }
+    public string Name { get; set; }
+    public string ContactInfo { get; set; }
+    public string Address { get; set; }
+    public string Website { get; set; }
+    public int PricingPolicyID { get; set; }
+    // Navigation property
+    public PricingPolicy PricingPolicy { get; set; }
+}
+
+public class Journal
+{
+    public int JournalID { get; set; }
+    public int PublisherID { get; set; }
+    public string Name { get; set; }
+    public int PricingPolicyID { get; set; }
+    // Navigation properties
+    public Publisher Publisher { get; set; }
+    public PricingPolicy PricingPolicy { get; set; }
+}
+
+public class PricingPolicy
+{
+    public int PricingPolicyID { get; set; }
+    public int? ParentPolicyID { get; set; } // Nullable for top-level policy
+    public string PolicyType { get; set; } // Basic, Publisher-specific, etc.
+    public decimal BasePrice { get; set; }
+    public string DiscountRules { get; set; } // This could be a JSON string or a complex object
+    public string SpecialConditions { get; set; } // Same as DiscountRules
+}
+
+public class Transaction
+{
+    public int TransactionID { get; set; }
+    public int ArticleID { get; set; }
+    public decimal Amount { get; set; }
+    public string Currency { get; set; }
+    public DateTime TransactionDate { get; set; }
+    public string PaymentMethod { get; set; }
+    public string Status { get; set; }
+    public string InvoiceNumber { get; set; }
+    public int PayerID { get; set; } // Assuming Payer is another entity
+    // Navigation property
+    public Article Article { get; set; }
+}
+```
